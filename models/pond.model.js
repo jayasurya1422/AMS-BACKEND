@@ -1,53 +1,68 @@
-const express = require('express');
-const router = express.Router();
-const db = require('../config/firebase'); // Import Firestore instance
+const db = require('../config/firebase');
+const admin = require('firebase-admin');
 
-// Add pond data
-router.post('/', async (req, res) => {
-  const { receivedString } = req.body;
-  try {
-    await db.collection('ponddetail').add({
-      receivedString: receivedString,
-    });
-
-    res.status(201).json({ message: 'Pond data added successfully' });
-  } catch (error) {
-    console.error('Error adding pond data: ', error);
-    res.status(500).json({ message: 'Failed to add pond data', error });
+class Pond {
+  constructor(pondId, i1, i2) {
+    this.receivedString = this.receivedString;
   }
-});
 
-// Update pond data
-router.put('/:id', async (req, res) => {
-  const { id } = req.params;
-  const { receivedString } = req.body;
-
-  try {
-    await db.collection('ponddetail').doc(id).update({
-      receivedString : receivedString
-    });
-
-    res.status(200).json({ message: 'Pond data updated successfully' });
-  } catch (error) {
-    console.error('Error updating pond data: ', error);
-    res.status(500).json({ message: 'Failed to update pond data', error });
+  // Save or update a pond detail
+  static async savePondDetail(pond) {
+    try {
+      const pondRef = db.collection('ponddetail').doc(pond.pondId);
+      await pondRef.set({
+        receivedString: receivedString,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true }); // Merge to update existing fields
+      console.log(Pond ${pond.pondId} saved successfully.);
+    } catch (error) {
+      console.error('Error saving pond detail:', error);
+    }
   }
-});
 
-// Get all pond data
-router.get('/', async (req, res) => {
-  try {
-    const snapshot = await db.collection('ponddetail').get();
-    const ponds = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    res.status(200).json(ponds);
-  } catch (error) {
-    console.error('Error getting pond data: ', error);
-    res.status(500).json({ message: 'Failed to get pond data', error });
+  // Get pond detail by pondId
+  static async getPondDetail(pondId) {
+    try {
+      const pondRef = db.collection('ponddetail').doc(pondId);
+      const doc = await pondRef.get();
+      if (!doc.exists) {
+        console.log(No such pond with ID: ${pondId});
+        return null;
+      }
+      return doc.data();
+    } catch (error) {
+      console.error('Error getting pond detail:', error);
+    }
   }
-});
 
-module.exports = router;
+  // Get all ponds
+  static async getAllPonds() {
+    try {
+      const snapshot = await db.collection('ponddetail').get();
+      if (snapshot.empty) {
+        console.log('No ponds found.');
+        return [];
+      }
+      const ponds = [];
+      snapshot.forEach(doc => {
+        ponds.push(doc.data());
+      });
+      return ponds;
+    } catch (error) {
+      console.error('Error getting all ponds:', error);
+    }
+  }
+
+  static async deletePond(pondId) {
+    try {
+      const pondRef = db.collection('ponddetail').doc(pondId);
+      await pondRef.delete();
+      console.log(Pond ${pondId} deleted successfully.);
+    } catch (error) {
+      console.error('Error deleting pond detail:', error);
+    }
+  }
+}
+
+module.exports = Pond;
