@@ -4,13 +4,10 @@ const db = require('../config/firebase'); // Import Firestore instance
 
 // Add pond data
 router.post('/', async (req, res) => {
-  const { pondId, i1, i2 } = req.body;
-
+  const { receivedString } = req.body;
   try {
     await db.collection('ponddetail').add({
-      pondId: pondId,
-      i1: i1,
-      i2: i2,
+      receivedString: receivedString,
     });
 
     res.status(201).json({ message: 'Pond data added successfully' });
@@ -23,12 +20,11 @@ router.post('/', async (req, res) => {
 // Update pond data
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { i1, i2 } = req.body;
+  const { receivedString } = req.body;
 
   try {
     await db.collection('ponddetail').doc(id).update({
-      i1: i1,
-      i2: i2,
+      receivedString : receivedString
     });
 
     res.status(200).json({ message: 'Pond data updated successfully' });
