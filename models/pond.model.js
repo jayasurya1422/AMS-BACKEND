@@ -2,54 +2,51 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/firebase'); // Import Firestore instance
 
-// Add a new pond
+// Add pond data
 router.post('/', async (req, res) => {
-  const { pondId, i1, i2 } = req.body;
-
+  const { receivedString } = req.body;
   try {
-    await db.collection('ponds').doc(pondId).set({
-      pondId,
-      i1,
-      i2,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    await db.collection('ponddetail').add({
+      receivedString: receivedString,
     });
-    res.status(201).send({ message: 'Pond added successfully' });
+
+    res.status(201).json({ message: 'Pond data added successfully' });
   } catch (error) {
-    res.status(500).send({ message: 'Error adding pond', error });
+    console.error('Error adding pond data: ', error);
+    res.status(500).json({ message: 'Failed to add pond data', error });
   }
 });
 
-// Update a pond
-router.put('/:pondId', async (req, res) => {
-  const { pondId } = req.params;
-  const { i1, i2 } = req.body;
+// Update pond data
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const { receivedString } = req.body;
 
   try {
-    await db.collection('ponds').doc(pondId).update({
-      i1,
-      i2,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    await db.collection('ponddetail').doc(id).update({
+      receivedString : receivedString
     });
-    res.status(200).send({ message: 'Pond updated successfully' });
+
+    res.status(200).json({ message: 'Pond data updated successfully' });
   } catch (error) {
-    res.status(500).send({ message: 'Error updating pond', error });
+    console.error('Error updating pond data: ', error);
+    res.status(500).json({ message: 'Failed to update pond data', error });
   }
 });
 
-// Get a pond
-router.get('/:pondId', async (req, res) => {
-  const { pondId } = req.params;
-
+// Get all pond data
+router.get('/', async (req, res) => {
   try {
-    const pondDoc = await db.collection('ponds').doc(pondId).get();
-    if (pondDoc.exists) {
-      res.status(200).send(pondDoc.data());
-    } else {
-      res.status(404).send({ message: 'No such pond found' });
-    }
+    const snapshot = await db.collection('ponddetail').get();
+    const ponds = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    res.status(200).json(ponds);
   } catch (error) {
-    res.status(500).send({ message: 'Error getting pond', error });
+    console.error('Error getting pond data: ', error);
+    res.status(500).json({ message: 'Failed to get pond data', error });
   }
 });
 
